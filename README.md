@@ -65,3 +65,4 @@ GitHub Pages with no build step. The workflow can also be run manually from the 
 `CLAUDE.md` (at the repo root) covers architecture and hex-grid calibration details.
 `.planning/codebase/` contains a deeper codebase map (note: `.planning/` is gitignored, so
 this directory is available only in local clones, not on the deployed site).
+<!-- deploy-loop verified: 2026-09-21 -->
