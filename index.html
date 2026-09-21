@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<title>The Western Reaches — Explorer's Chart</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+  :root{
+    --table:#221b12; --paper:#efe6cf; --paper-edge:#d8c7a0;
+    --ink:#33261a; --ink-soft:#6f5c44; --line:#c3ad84;
+    --gold:#c08a34; --gold-soft:#e6c583; --red:#a23a22; --fog:#1c1710;
+    --shadow:0 6px 22px rgba(0,0,0,.45); color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  html,body{height:100%; margin:0}
+  body{background:var(--table); color:var(--ink); font-family:"Spectral",Georgia,serif;
+    overflow:hidden; -webkit-tap-highlight-color:transparent;}
+  #app{position:fixed; inset:0; display:flex; flex-direction:column;}
+  img{max-width:100%}
+
+  #bar{position:relative; z-index:20; display:flex; align-items:center; gap:12px;
+    padding:10px 14px; padding-top:calc(10px + env(safe-area-inset-top,0px));
+    background:linear-gradient(180deg,#2c2318,#241c12); border-bottom:1px solid #4a3c28;
+    box-shadow:0 2px 10px rgba(0,0,0,.4); flex-wrap:wrap;}
+  #brand{display:flex; flex-direction:column; line-height:1; margin-right:4px;}
+  #brand .t{font-family:"Cinzel",serif; font-weight:700; letter-spacing:.04em; color:var(--gold-soft); font-size:19px;}
+  #brand .s{font-size:11px; color:#9c876a; letter-spacing:.18em; text-transform:uppercase; margin-top:3px;}
+  .grow{flex:1 1 40px}
+  #search{position:relative; min-width:150px; flex:0 1 260px;}
+  #search input{width:100%; background:var(--paper); color:var(--ink); border:1px solid var(--paper-edge);
+    border-radius:7px; padding:8px 10px; font-family:"Spectral",serif; font-size:14px;}
+  #search input::placeholder{color:#8a7963}
+  #results{position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:30; background:var(--paper);
+    border:1px solid var(--paper-edge); border-radius:8px; box-shadow:var(--shadow); overflow:hidden; max-height:260px; overflow-y:auto;}
+  #results button{display:block; width:100%; text-align:left; background:none; border:0; border-bottom:1px solid #e4d7b8;
+    padding:8px 11px; cursor:pointer; font-family:"Spectral",serif; font-size:13.5px; color:var(--ink);}
+  #results button:hover{background:#f6efdc}
+  #results .co{font-variant-numeric:tabular-nums; color:var(--ink-soft); font-size:12px}
+  .btn{background:#3a2e1e; color:var(--gold-soft); border:1px solid #5a4830; border-radius:7px;
+    padding:8px 11px; font-family:"Cinzel",serif; font-weight:600; font-size:12.5px; letter-spacing:.03em; cursor:pointer; white-space:nowrap;}
+  .btn:hover{background:#463825}
+  .btn.on{background:var(--gold); color:#23180a; border-color:var(--gold)}
+  .zoomers{display:flex; gap:6px}
+  .zoomers .btn{padding:8px 12px; font-size:15px; line-height:1}
+
+  #viewport{position:relative; flex:1 1 auto; overflow:hidden; cursor:grab; touch-action:none;
+    background:radial-gradient(120% 90% at 50% 0%, #2b2216 0%, #1b150d 90%);}
+  #viewport.grabbing{cursor:grabbing}
+  #world{position:absolute; top:0; left:0; transform-origin:0 0; pointer-events:none;}
+  #basemap{display:block; user-select:none; -webkit-user-drag:none;}
+  #ov{position:absolute; top:0; left:0;}
+
+  #info{position:absolute; z-index:15; left:14px; bottom:calc(14px + env(safe-area-inset-bottom,0px));
+    width:min(300px, calc(100% - 28px)); background:var(--paper); color:var(--ink); border:1px solid var(--paper-edge);
+    border-radius:10px; box-shadow:var(--shadow); padding:13px 15px; transform:translateY(8px); opacity:0; pointer-events:none; transition:.16s ease;}
+  #info.show{transform:none; opacity:1; pointer-events:auto}
+  #info .coord{font-family:"Cinzel",serif; font-weight:700; font-size:22px; letter-spacing:.06em; color:var(--ink)}
+  #info .badge{display:inline-block; margin-left:8px; vertical-align:2px; font-family:"Spectral",serif; font-size:11px;
+    letter-spacing:.1em; text-transform:uppercase; padding:2px 8px; border-radius:20px; background:#e6d290; color:#5a4514; border:1px solid #cdb268;}
+  #info .row{margin-top:7px; font-size:13.5px; color:var(--ink-soft)}
+  #info .row b{color:var(--ink); font-weight:600}
+  #info .poi{margin-top:9px; padding-top:9px; border-top:1px dashed #cdb98f}
+  #info .poi .nm{font-weight:600; color:var(--ink); font-size:15px}
+  #info .poi .meta{font-size:12px; color:var(--ink-soft); margin-top:2px}
+  #info .ft{margin-top:9px; font-size:12.5px; color:#8a6a1e}
+  #info .act{display:flex; gap:8px; margin-top:11px}
+  #info .act .btn{flex:1; text-align:center}
+  #info .act .reveal{background:#2f5d38; color:#d9f0dd; border-color:#3e7a49}
+  #info .act .hide{background:#6e2d1e; color:#f2ddd6; border-color:#8a3b28}
+  #info .close{position:absolute; top:8px; right:10px; background:none; border:0; color:var(--ink-soft); font-size:18px; cursor:pointer; line-height:1}
+
+  #legend{position:absolute; z-index:15; right:14px; bottom:calc(14px + env(safe-area-inset-bottom,0px));
+    background:rgba(30,24,15,.82); color:#d8c6a4; border:1px solid #4a3c28; border-radius:9px; padding:9px 12px; font-size:11.5px; line-height:1.7;}
+  #legend .k{display:flex; align-items:center; gap:7px}
+  #legend .sw{width:13px; height:13px; border-radius:3px; flex:none; border:1px solid rgba(255,255,255,.15)}
+  #status{position:absolute; z-index:16; left:50%; top:12px; transform:translateX(-50%);
+    background:rgba(30,24,15,.92); color:#e6c583; border:1px solid #5a4830; border-radius:20px; padding:6px 15px;
+    font-family:"Cinzel",serif; font-size:12px; letter-spacing:.05em; opacity:0; transition:.2s; pointer-events:none; white-space:nowrap; max-width:92%; text-align:center;}
+  #status.show{opacity:1}
+  #gmpill{position:absolute; z-index:15; right:14px; top:12px; background:var(--gold); color:#23180a; border-radius:20px;
+    padding:5px 13px; font-family:"Cinzel",serif; font-weight:700; font-size:11px; letter-spacing:.08em; display:none; align-items:center; gap:8px;}
+  #gmpill.show{display:flex}
+  #gmpill a{color:#5a3a12; text-decoration:underline; cursor:pointer; font-weight:600}
+  #hint{position:absolute; z-index:14; left:50%; bottom:calc(14px + env(safe-area-inset-bottom,0px)); transform:translateX(-50%);
+    color:#9c876a; font-size:11.5px; letter-spacing:.03em; pointer-events:none; text-align:center;}
+  #empty{position:absolute; z-index:13; left:50%; top:50%; transform:translate(-50%,-50%); text-align:center; color:#cdb98f; max-width:280px; pointer-events:none;}
+  #empty .e-title{font-family:"Cinzel",serif; font-weight:700; font-size:26px; letter-spacing:.14em; color:#e6c583}
+  #empty .e-sub{font-size:13.5px; margin-top:10px; line-height:1.6; color:#a8977a}
+
+  /* GM login modal */
+  #modal{position:fixed; inset:0; z-index:40; display:none; align-items:center; justify-content:center; background:rgba(10,7,3,.6); padding:16px;}
+  #modal.show{display:flex}
+  #modal .card{background:var(--paper); color:var(--ink); border:1px solid var(--paper-edge); border-radius:12px;
+    box-shadow:var(--shadow); padding:20px; width:min(340px,100%);}
+  #modal h2{font-family:"Cinzel",serif; margin:0 0 4px; font-size:18px; color:var(--ink)}
+  #modal p{margin:0 0 14px; font-size:12.5px; color:var(--ink-soft)}
+  #modal label{display:block; font-size:12px; color:var(--ink-soft); margin:10px 0 4px; letter-spacing:.04em}
+  #modal input{width:100%; padding:9px 10px; border:1px solid var(--paper-edge); border-radius:7px; font-family:"Spectral",serif; font-size:14px; background:#fbf7ec; color:var(--ink)}
+  #modal .err{color:#a23a22; font-size:12.5px; margin-top:10px; min-height:16px}
+  #modal .actions{display:flex; gap:8px; margin-top:16px}
+  #modal .actions .btn{flex:1; text-align:center; padding:10px}
+  #modal .actions .go{background:var(--gold); color:#23180a; border-color:var(--gold)}
+  #seedrow{margin-top:14px; padding-top:12px; border-top:1px dashed #cdb98f; font-size:12px; color:var(--ink-soft)}
+  #seedrow input[type=file]{font-size:11px; margin-top:6px}
+  @media (max-width:560px){ #brand .s{display:none} #legend{display:none} #hint{display:none} }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="bar">
+    <div id="brand"><span class="t">The Western Reaches</span><span class="s">Explorer&#39;s Chart</span></div>
+    <div id="search">
+      <input id="q" type="text" autocomplete="off" placeholder="Jump to hex (e.g. 3952) or place&hellip;">
+      <div id="results" hidden></div>
+    </div>
+    <span class="grow"></span>
+    <div class="zoomers">
+      <button class="btn" id="zin" title="Zoom in">+</button>
+      <button class="btn" id="zout" title="Zoom out">&minus;</button>
+      <button class="btn" id="fit" title="Fit map">Fit</button>
+    </div>
+    <button class="btn" id="gmbtn">GM Login</button>
+  </div>
+
+  <div id="viewport">
+    <div id="world">
+      <img id="basemap" src="assets/map.webp" alt="Map of the Western Reaches" draggable="false">
+      <svg id="ov" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+    <div id="gmpill"><span>GM MODE &middot; tap a hex to reveal</span><a id="signout">sign out</a></div>
+    <div id="status"></div>
+    <div id="info">
+      <button class="close" id="infoclose" aria-label="Close">&times;</button>
+      <div><span class="coord" id="i-coord">&mdash;</span><span class="badge" id="i-badge" hidden>Point of Interest</span></div>
+      <div class="row" id="i-state"></div>
+      <div class="poi" id="i-poi" hidden></div>
+      <div class="ft" id="i-ft" hidden></div>
+      <div class="act" id="i-act" hidden></div>
+    </div>
+    <div id="legend">
+      <div class="k"><span class="sw" style="background:#efe6cf"></span> Explored</div>
+      <div class="k"><span class="sw" style="background:#1c1710"></span> Unexplored</div>
+      <div class="k"><span class="sw" style="background:#c08a34"></span> Fast-travel reach</div>
+    </div>
+    <div id="hint">Drag to pan &middot; scroll or pinch to zoom &middot; tap a hex for details</div>
+    <div id="empty" hidden>
+      <div class="e-title">Uncharted</div>
+      <div class="e-sub">The Reaches are unexplored. Hexes appear here as your parties discover them.</div>
+    </div>
+  </div>
+</div>
+
+<div id="modal">
+  <div class="card">
+    <h2>Game Master sign-in</h2>
+    <p>Sign in with the GM account to reveal hexes. Players don&#39;t need to sign in.</p>
+    <label for="em">Email</label>
+    <input id="em" type="email" autocomplete="username">
+    <label for="pw">Password</label>
+    <input id="pw" type="password" autocomplete="current-password">
+    <div class="err" id="loginerr"></div>
+    <div class="actions">
+      <button class="btn" id="mcancel">Cancel</button>
+      <button class="btn go" id="mlogin">Sign in</button>
+    </div>
+    <div id="seedrow" hidden>
+      Signed in. One-time setup: import the point-of-interest key (data/poi.json) so hex details show for you.
+      <input id="seedfile" type="file" accept="application/json">
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { firebaseConfig, GM_UID } from "./firebase-config.js";
+
+/* ---------------- backend (Firebase, loaded lazily) ----------------
+   The map engine below must render with no network at all, so the
+   Firebase SDK is imported dynamically only when real config is present.
+   A blocked CDN or offline player still gets the map (read-only). */
+var configured = !!(firebaseConfig && firebaseConfig.apiKey && firebaseConfig.apiKey.indexOf("YOUR_")<0);
+var FB=null, SDK=null, pendingRevealed=null, pendingGM=null;
+
+var Backend={
+  configured:configured,
+  onRevealed:function(cb){ pendingRevealed=cb; if(FB) attachRevealed(); else cb(new Set()); },
+  onGM:function(cb){ pendingGM=cb; if(FB) attachGM(); else cb(false); },
+  reveal:function(id){ return FB ? SDK.setDoc(SDK.doc(FB.db,"revealed",id),{t:Date.now()}) : Promise.reject(new Error("offline")); },
+  hide:function(id){ return FB ? SDK.deleteDoc(SDK.doc(FB.db,"revealed",id)) : Promise.reject(new Error("offline")); },
+  login:function(em,pw){ return FB ? SDK.signInWithEmailAndPassword(FB.auth,em,pw) : Promise.reject(new Error("offline")); },
+  logout:function(){ return FB ? SDK.signOut(FB.auth) : Promise.resolve(); },
+  getPOI:function(){ return FB ? SDK.getDoc(SDK.doc(FB.db,"meta","poi")).then(function(s){ return s.exists()? (s.data().hexes||null):null; }) : Promise.resolve(null); },
+  seedPOI:function(hexes){ return FB ? SDK.setDoc(SDK.doc(FB.db,"meta","poi"),{hexes:hexes}) : Promise.reject(new Error("offline")); }
+};
+function attachRevealed(){ if(!FB||!pendingRevealed) return;
+  SDK.onSnapshot(SDK.collection(FB.db,"revealed"), function(snap){ var s=new Set(); snap.forEach(function(d){ s.add(d.id); }); pendingRevealed(s); },
+    function(err){ console.warn("revealed sync error",err); }); }
+function attachGM(){ if(!FB||!pendingGM) return;
+  SDK.onAuthStateChanged(FB.auth, function(u){ pendingGM(!!(u && (!GM_UID || GM_UID.indexOf("YOUR_")>=0 || u.uid===GM_UID))); }); }
+async function initFirebase(){ if(!configured) return;
+  try{
+    var base="https://www.gstatic.com/firebasejs/10.12.5/";
+    var appMod=await import(base+"firebase-app.js"), fsMod=await import(base+"firebase-firestore.js"), authMod=await import(base+"firebase-auth.js");
+    SDK={ collection:fsMod.collection, doc:fsMod.doc, setDoc:fsMod.setDoc, deleteDoc:fsMod.deleteDoc, onSnapshot:fsMod.onSnapshot, getDoc:fsMod.getDoc,
+          onAuthStateChanged:authMod.onAuthStateChanged, signInWithEmailAndPassword:authMod.signInWithEmailAndPassword, signOut:authMod.signOut };
+    var app=appMod.initializeApp(firebaseConfig);
+    FB={ db:fsMod.getFirestore(app), auth:authMod.getAuth(app) };
+    attachRevealed(); attachGM();
+  }catch(e){ console.error("Firebase load/init failed:",e); configured=false; Backend.configured=false;
+    flash("Couldn't reach the live server — showing the map read-only"); } }
+
+/* ---------------- calibrated hex grid ---------------- */
+var GRID={ a:142.88236869958047, b:485.688233162847, m:174.42528583526752, e:87.38122296995863, d:316.35291975981704,
+           W:190.50982493277397, H:174.42528583526752, fullW:9933, fullH:14043, colMin:1, colMax:64, rowMin:0, rowMax:80 };
+var DW=3200, DH=4524, K=DW/GRID.fullW, WD=GRID.W*K, HD=GRID.H*K;
+function centerFull(c,r){ return [GRID.a*c+GRID.b, GRID.m*r+GRID.e*(c&1)+GRID.d]; }
+function cD(c,r){ var p=centerFull(c,r); return [p[0]*K,p[1]*K]; }
+function hexId(c,r){ return String(c).padStart(2,"0")+String(r).padStart(2,"0"); }
+function parseId(id){ return [parseInt(id.slice(0,2),10), parseInt(id.slice(2),10)]; }
+function ptsD(cx,cy){ var hw=WD/2,qw=WD/4,hh=HD/2;
+  return [[cx+hw,cy],[cx+qw,cy-hh],[cx-qw,cy-hh],[cx-hw,cy],[cx-qw,cy+hh],[cx+qw,cy+hh]]
+    .map(function(p){return p[0].toFixed(1)+","+p[1].toFixed(1);}).join(" "); }
+function pixelToHex(dx,dy){ var fx=dx/K, fy=dy/K, ap=Math.round((fx-GRID.b)/GRID.a), best=null, bd=Infinity;
+  for(var c=ap-1;c<=ap+1;c++){ if(c<GRID.colMin||c>GRID.colMax) continue;
+    var r=Math.round((fy-GRID.d-GRID.e*(c&1))/GRID.m);
+    for(var rr=r-1;rr<=r+1;rr++){ if(rr<GRID.rowMin||rr>GRID.rowMax) continue;
+      var ct=centerFull(c,rr), ex=ct[0]-fx, ey=ct[1]-fy, dd=ex*ex+ey*ey; if(dd<bd){bd=dd; best=[c,rr];} } }
+  return best; }
+function neighbours(id){ var cr=parseId(id), col=cr[0], row=cr[1], x=col, z=row-((col-(col&1))/2), y=-x-z;
+  var dirs=[[1,-1,0],[1,0,-1],[0,1,-1],[-1,1,0],[-1,0,1],[0,-1,1]], out=[];
+  for(var i=0;i<6;i++){ var nx=x+dirs[i][0], nz=z+dirs[i][2], nc=nx, nr=nz+((nx-(nx&1))/2);
+    if(nc>=GRID.colMin&&nc<=GRID.colMax&&nr>=GRID.rowMin&&nr<=GRID.rowMax) out.push(hexId(nc,nr)); }
+  return out; }
+
+/* ---------------- svg + view ---------------- */
+var SVGNS="http://www.w3.org/2000/svg";
+var svg=document.getElementById("ov"), world=document.getElementById("world"),
+    vp=document.getElementById("viewport"), info=document.getElementById("info"), basemap=document.getElementById("basemap");
+basemap.width=DW; basemap.height=DH;
+svg.setAttribute("width",DW); svg.setAttribute("height",DH); svg.setAttribute("viewBox","0 0 "+DW+" "+DH);
+var defs=document.createElementNS(SVGNS,"defs"), mask=document.createElementNS(SVGNS,"mask");
+mask.setAttribute("id","fogmask"); mask.setAttribute("maskUnits","userSpaceOnUse");
+var mbg=document.createElementNS(SVGNS,"rect"); mbg.setAttribute("width",DW); mbg.setAttribute("height",DH); mbg.setAttribute("fill","#fff"); mask.appendChild(mbg);
+var maskHoles=document.createElementNS(SVGNS,"g"); mask.appendChild(maskHoles); defs.appendChild(mask); svg.appendChild(defs);
+var fog=document.createElementNS(SVGNS,"rect"); fog.setAttribute("width",DW); fog.setAttribute("height",DH);
+fog.setAttribute("fill","#1c1710"); fog.setAttribute("mask","url(#fogmask)"); fog.setAttribute("opacity","0.965"); svg.appendChild(fog);
+var overlay=document.createElementNS(SVGNS,"g"); svg.appendChild(overlay);
+
+var revealed=new Set(), selected=null, isGM=false, gmMode=false, gmKey=null;
+var scale=0.3, tx=0, ty=0, minS=0.1, maxS=3.4;
+function apply(){ world.style.transform="translate("+tx+"px,"+ty+"px) scale("+scale+")"; }
+function fit(){ var w=vp.clientWidth, h=vp.clientHeight; if(!w||!h){ setTimeout(fit,60); return; }
+  scale=Math.min(w/DW,h/DH)*0.98; minS=scale*0.85; tx=(w-DW*scale)/2; ty=(h-DH*scale)/2; apply(); }
+function zoomAt(cx,cy,f){ var ns=Math.max(minS,Math.min(maxS,scale*f)); if(ns===scale) return;
+  tx=cx-(cx-tx)*(ns/scale); ty=cy-(cy-ty)*(ns/scale); scale=ns; apply(); }
+function screenToWorld(sx,sy){ var r=vp.getBoundingClientRect(); return [(sx-r.left-tx)/scale,(sy-r.top-ty)/scale]; }
+
+function renderFog(){ while(maskHoles.firstChild) maskHoles.removeChild(maskHoles.firstChild);
+  revealed.forEach(function(id){ var cr=parseId(id), c=cD(cr[0],cr[1]);
+    var p=document.createElementNS(SVGNS,"polygon"); p.setAttribute("points",ptsD(c[0],c[1])); p.setAttribute("fill","#000"); maskHoles.appendChild(p); });
+  updateEmpty(); }
+function updateEmpty(){ document.getElementById("empty").hidden = !(revealed.size===0 && !gmMode); }
+function clearOverlay(){ while(overlay.firstChild) overlay.removeChild(overlay.firstChild); }
+function outline(c,stroke,width,fill){ var p=document.createElementNS(SVGNS,"polygon");
+  p.setAttribute("points",ptsD(c[0],c[1])); p.setAttribute("fill",fill||"none"); p.setAttribute("stroke",stroke);
+  p.setAttribute("stroke-width",width); p.setAttribute("stroke-linejoin","round"); overlay.appendChild(p); }
+function reachFrom(id){ var seen=new Set([id]), q=[id];
+  while(q.length){ neighbours(q.pop()).forEach(function(n){ if(!seen.has(n)&&revealed.has(n)){seen.add(n); q.push(n);} }); } return seen; }
+function renderOverlay(){ clearOverlay();
+  if(selected && revealed.has(selected)){ reachFrom(selected).forEach(function(id){ if(id===selected) return;
+    var cr=parseId(id); outline(cD(cr[0],cr[1]),"#c08a34",2,"rgba(192,138,52,0.22)"); }); }
+  if(selected){ var s=parseId(selected); outline(cD(s[0],s[1]),"#a23a22",3); } }
+
+function showInfo(id){ selected=id; renderOverlay();
+  var cr=parseId(id), isRev=revealed.has(id);
+  document.getElementById("i-coord").textContent=id;
+  var badge=document.getElementById("i-badge"), poi=document.getElementById("i-poi"),
+      ftEl=document.getElementById("i-ft"), stateEl=document.getElementById("i-state"), act=document.getElementById("i-act");
+  var poiData=gmKey && gmKey[id];
+  stateEl.innerHTML=isRev ? '<b style="color:#2f5d38">Explored</b> &middot; column '+cr[0]+', row '+cr[1]
+                          : '<b style="color:#8a6a1e">Unexplored</b> &middot; column '+cr[0]+', row '+cr[1];
+  badge.hidden=true; poi.hidden=true;
+  if(poiData){ badge.hidden=false; poi.hidden=false;
+    var t=poiData.type?poiData.type.replace(/\b\w/g,function(x){return x.toUpperCase();}):"Site";
+    poi.innerHTML='<div class="nm"></div><div class="meta"></div>';
+    poi.querySelector(".nm").textContent=poiData.name||"Keyed location";
+    poi.querySelector(".meta").textContent=[t,poiData.terrain,poiData.region].filter(Boolean).join("  ·  "); }
+  if(isRev){ var reach=reachFrom(id); ftEl.hidden=false;
+    ftEl.textContent=reach.size>1 ? "⚔ Fast-travel network: "+(reach.size-1)+" connected hex"+(reach.size-1===1?"":"es")
+                                  : "⚔ No explored neighbours yet"; } else ftEl.hidden=true;
+  act.hidden=!isGM;
+  if(isGM){ act.innerHTML=""; var b=document.createElement("button");
+    b.className="btn "+(isRev?"hide":"reveal"); b.textContent=isRev?"Hide hex":"Reveal hex";
+    b.onclick=function(){ toggleReveal(id); }; act.appendChild(b); }
+  info.classList.add("show"); }
+document.getElementById("infoclose").onclick=function(){ info.classList.remove("show"); selected=null; renderOverlay(); };
+
+function toggleReveal(id){ if(!isGM) return; var willReveal=!revealed.has(id);
+  if(willReveal) revealed.add(id); else revealed.delete(id);
+  renderFog(); renderOverlay(); showInfo(id);
+  var op = willReveal ? Backend.reveal(id) : Backend.hide(id);
+  if(op && op.catch) op.catch(function(e){ if(willReveal) revealed.delete(id); else revealed.add(id); renderFog(); renderOverlay();
+    flash("Couldn't save the change — check your connection"); console.warn(e); }); }
+
+var statusEl=document.getElementById("status"), stTimer=null;
+function flash(msg){ statusEl.textContent=msg; statusEl.classList.add("show"); clearTimeout(stTimer);
+  stTimer=setTimeout(function(){statusEl.classList.remove("show");},2800); }
+
+/* ---------------- pan / zoom / tap ---------------- */
+var pointers=new Map(), panStart=null, moved=0, pinchStart=null;
+vp.addEventListener("pointerdown",function(e){ vp.setPointerCapture(e.pointerId); pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(pointers.size===1){ panStart={x:e.clientX,y:e.clientY,tx:tx,ty:ty}; moved=0; vp.classList.add("grabbing"); }
+  else if(pointers.size===2){ pinchStart=pinchInfo(); } });
+vp.addEventListener("pointermove",function(e){ if(!pointers.has(e.pointerId)) return; pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(pointers.size===2 && pinchStart){ var pi=pinchInfo(), f=pi.dist/pinchStart.dist, ns=Math.max(minS,Math.min(maxS,pinchStart.scale*f));
+    var r=vp.getBoundingClientRect(), cx=pi.cx-r.left, cy=pi.cy-r.top;
+    tx=cx-(cx-pinchStart.tx)*(ns/pinchStart.scale); ty=cy-(cy-pinchStart.ty)*(ns/pinchStart.scale); scale=ns; apply(); }
+  else if(pointers.size===1 && panStart){ var dx=e.clientX-panStart.x, dy=e.clientY-panStart.y; moved=Math.max(moved,Math.abs(dx)+Math.abs(dy));
+    tx=panStart.tx+dx; ty=panStart.ty+dy; apply(); } });
+function endPointer(e){ if(!pointers.has(e.pointerId)) return; var wasTap=pointers.size===1 && moved<6;
+  pointers.delete(e.pointerId); if(pointers.size<2) pinchStart=null; if(pointers.size===0){ vp.classList.remove("grabbing"); panStart=null; }
+  if(wasTap) handleTap(e.clientX,e.clientY); }
+vp.addEventListener("pointerup",endPointer); vp.addEventListener("pointercancel",endPointer);
+function pinchInfo(){ var ps=[...pointers.values()], dx=ps[0].x-ps[1].x, dy=ps[0].y-ps[1].y;
+  return {dist:Math.hypot(dx,dy),cx:(ps[0].x+ps[1].x)/2,cy:(ps[0].y+ps[1].y)/2,scale:scale,tx:tx,ty:ty}; }
+vp.addEventListener("wheel",function(e){ e.preventDefault(); var r=vp.getBoundingClientRect();
+  zoomAt(e.clientX-r.left,e.clientY-r.top, e.deltaY<0?1.15:1/1.15); },{passive:false});
+function handleTap(sx,sy){ var w=screenToWorld(sx,sy); if(w[0]<0||w[1]<0||w[0]>DW||w[1]>DH) return;
+  var hx=pixelToHex(w[0],w[1]); if(hx) showInfo(hexId(hx[0],hx[1])); }
+document.getElementById("zin").onclick=function(){ zoomAt(vp.clientWidth/2,vp.clientHeight/2,1.3); };
+document.getElementById("zout").onclick=function(){ zoomAt(vp.clientWidth/2,vp.clientHeight/2,1/1.3); };
+document.getElementById("fit").onclick=fit;
+function centerOn(id,z){ var cr=parseId(id), c=cD(cr[0],cr[1]); if(z) scale=Math.max(minS,Math.min(maxS,z));
+  tx=vp.clientWidth/2-c[0]*scale; ty=vp.clientHeight/2-c[1]*scale; apply(); }
+
+/* ---------------- search ---------------- */
+var q=document.getElementById("q"), results=document.getElementById("results");
+q.addEventListener("input",function(){ var v=q.value.trim().toLowerCase(); results.innerHTML="";
+  if(!v){ results.hidden=true; return; } var out=[], digits=v.replace(/\D/g,"");
+  if(digits.length>=3 && digits.length<=4){ var id=digits.padStart(4,"0"); out.push({id:id,label:"Hex "+id,sub:""}); }
+  if(gmKey){ for(var id2 in gmKey){ if(out.length>=12) break; var p=gmKey[id2];
+    if(p.name && p.name.toLowerCase().indexOf(v)>=0) out.push({id:id2,label:p.name,sub:id2+"  ·  "+(p.region||"")}); } }
+  if(!out.length){ results.hidden=true; return; }
+  out.slice(0,12).forEach(function(o){ var b=document.createElement("button");
+    b.innerHTML='<span></span> <span class="co"></span>'; b.children[0].textContent=o.label; b.children[1].textContent=o.sub;
+    b.onclick=function(){ results.hidden=true; q.value=""; centerOn(o.id,1.2); showInfo(o.id); }; results.appendChild(b); });
+  results.hidden=false; });
+document.addEventListener("click",function(e){ if(!document.getElementById("search").contains(e.target)) results.hidden=true; });
+
+/* ---------------- GM auth + controls ---------------- */
+var gmbtn=document.getElementById("gmbtn"), gmpill=document.getElementById("gmpill"),
+    modal=document.getElementById("modal"), loginerr=document.getElementById("loginerr"), seedrow=document.getElementById("seedrow");
+gmbtn.onclick=function(){
+  if(!Backend.configured){ flash("Add your Firebase settings in firebase-config.js"); return; }
+  if(!isGM){ modal.classList.add("show"); document.getElementById("em").focus(); return; }
+  gmMode=!gmMode; gmbtn.classList.toggle("on",gmMode); fog.setAttribute("opacity", gmMode?"0.42":"0.965");
+  gmpill.classList.toggle("show",gmMode); updateEmpty();
+  flash(gmMode?"GM mode on — the whole map is dimly visible":"GM mode off — player view"); };
+document.getElementById("mcancel").onclick=function(){ modal.classList.remove("show"); loginerr.textContent=""; };
+document.getElementById("mlogin").onclick=function(){ loginerr.textContent="";
+  Backend.login(document.getElementById("em").value.trim(), document.getElementById("pw").value)
+    .then(function(){ modal.classList.remove("show"); })
+    .catch(function(e){ loginerr.textContent = (e && e.code==="auth/invalid-credential") ? "Wrong email or password." : ("Sign-in failed: "+(e && e.message || e)); }); };
+document.getElementById("signout").onclick=function(){ Backend.logout(); };
+document.getElementById("seedfile").onchange=function(e){ var f=e.target.files[0]; if(!f) return;
+  var rd=new FileReader(); rd.onload=function(){ try{ var j=JSON.parse(rd.result); var hexes=j.hexes||j;
+    Backend.seedPOI(hexes).then(function(){ gmKey=hexes; flash("Imported "+Object.keys(hexes).length+" points of interest"); seedrow.hidden=true; if(selected) showInfo(selected); })
+      .catch(function(err){ flash("Import failed: "+(err&&err.message||err)); }); }
+    catch(err){ flash("That file isn't valid JSON"); } }; rd.readAsText(f); };
+
+function onGMChange(v){ isGM=!!v;
+  gmbtn.textContent = isGM ? "GM Mode" : "GM Login";
+  if(!isGM){ gmMode=false; gmbtn.classList.remove("on"); gmpill.classList.remove("show"); fog.setAttribute("opacity","0.965"); gmKey=null; updateEmpty(); }
+  if(isGM){ modal.classList.remove("show");
+    Backend.getPOI().then(function(h){ if(h){ gmKey=h; seedrow.hidden=true; } else { seedrow.hidden=false; modal.classList.add("show"); } if(selected) showInfo(selected); }).catch(function(){}); }
+  if(selected) showInfo(selected);
+}
+
+/* ---------------- boot ---------------- */
+fit();
+Backend.onRevealed(function(s){ revealed=s; renderFog(); if(selected && info.classList.contains("show")) showInfo(selected); });
+Backend.onGM(onGMChange);
+if(!Backend.configured){ flash("Demo mode — add Firebase settings in firebase-config.js to go live"); }
+initFirebase();
+</script>
+</body>
+</html>

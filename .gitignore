@@ -1,0 +1,10 @@
+# Spoiler data — the keyed points of interest. Keep this OUT of the public
+# repo; it lives only on your machine and in Firestore behind GM-only rules.
+data/poi.json
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+node_modules/
