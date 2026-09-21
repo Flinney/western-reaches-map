@@ -17,12 +17,12 @@
 // ---------------------------------------------------------------------------
 
 export const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyBb6mcaVfYoPTHEYbO88GUHxu-IhGi61sE",
+  authDomain: "western-reaches.firebaseapp.com",
+  projectId: "western-reaches",
+  storageBucket: "western-reaches.firebasestorage.app",
+  messagingSenderId: "105483290128",
+  appId: "1:105483290128:web:e2e320848b3e2482082c95"
 };
 
 // The Firebase Auth UID of the GM account. Find it under
