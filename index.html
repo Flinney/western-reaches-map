@@ -338,6 +338,26 @@ function initDebugOverlay(){
   updateDebug();
   window.addEventListener("resize",updateDebug);
   window.addEventListener("orientationchange",updateDebug);
+  drawGridMarkers();
+}
+function drawGridMarkers(){
+  var g=document.createElementNS(SVGNS,"g"); g.setAttribute("id","gridmarkers");
+  for(var c=3;c<=8;c++){
+    for(var r=24;r<=28;r++){
+      var p=cD(c,r);
+      var poly=document.createElementNS(SVGNS,"polygon");
+      poly.setAttribute("points",ptsD(p[0],p[1]));
+      poly.setAttribute("fill","none"); poly.setAttribute("stroke","#ff00ff"); poly.setAttribute("stroke-width","1");
+      g.appendChild(poly);
+      var dot=document.createElementNS(SVGNS,"circle");
+      dot.setAttribute("cx",p[0]); dot.setAttribute("cy",p[1]); dot.setAttribute("r","3"); dot.setAttribute("fill","#ff00ff");
+      g.appendChild(dot);
+      var lbl=document.createElementNS(SVGNS,"text");
+      lbl.setAttribute("x",p[0]+8); lbl.setAttribute("y",p[1]-4); lbl.setAttribute("fill","#ff00ff"); lbl.setAttribute("font-size","10");
+      lbl.textContent=hexId(c,r); g.appendChild(lbl);
+    }
+  }
+  svg.appendChild(g);
 }
 
 /* ---------------- pan / zoom / tap ---------------- */
