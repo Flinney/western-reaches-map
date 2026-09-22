@@ -312,6 +312,7 @@ function toggleReveal(id){ if(!isGM) return; var willReveal=!revealed.has(id);
   renderFog(); renderOverlay(); showInfo(id);
   var op = willReveal ? Backend.reveal(id) : Backend.hide(id);
   if(op && op.catch) op.catch(function(e){ if(willReveal) revealed.delete(id); else revealed.add(id); renderFog(); renderOverlay();
+    if(selected===id) showInfo(id);
     flash("Couldn't save the change — check your connection"); console.warn(e); }); }
 
 var statusEl=document.getElementById("status"), stTimer=null;
