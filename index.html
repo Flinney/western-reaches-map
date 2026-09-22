@@ -349,7 +349,9 @@ function initDebugOverlay(){
 
 /* ---------------- pan / zoom / tap ---------------- */
 var pointers=new Map(), panStart=null, moved=0, pinchStart=null;
-vp.addEventListener("pointerdown",function(e){ vp.setPointerCapture(e.pointerId); pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+vp.addEventListener("pointerdown",function(e){
+  if(e.target.closest && e.target.closest("#info,#gmpill")) return;
+  vp.setPointerCapture(e.pointerId); pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
   if(pointers.size===1){ panStart={x:e.clientX,y:e.clientY,tx:tx,ty:ty}; moved=0; vp.classList.add("grabbing"); }
   else if(pointers.size===2){ pinchStart=pinchInfo(); } });
 vp.addEventListener("pointermove",function(e){ if(!pointers.has(e.pointerId)) return; pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
