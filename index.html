@@ -254,7 +254,7 @@ var overlay=document.createElementNS(SVGNS,"g"); svg.appendChild(overlay);
 
 var revealed=new Set(), selected=null, isGM=false, gmMode=false, gmKey=null;
 var scale=0.3, tx=0, ty=0, minS=0.1, maxS=3.4;
-var lastTap=null, lastCenter=null;
+var lastTap=null, lastCenter=null, lastReachSize=null;
 function apply(){ world.style.transform="translate("+tx+"px,"+ty+"px) scale("+scale+")"; }
 function fit(){ var w=vp.clientWidth, h=vp.clientHeight; if(!w||!h){ setTimeout(fit,60); return; }
   scale=Math.min(w/DW,h/DH)*0.98; minS=scale*0.85; tx=(w-DW*scale)/2; ty=(h-DH*scale)/2; apply(); }
@@ -274,9 +274,14 @@ function outline(c,stroke,width,fill){ var p=document.createElementNS(SVGNS,"pol
 function reachFrom(id){ var seen=new Set([id]), q=[id];
   while(q.length){ neighbours(q.pop()).forEach(function(n){ if(!seen.has(n)&&revealed.has(n)){seen.add(n); q.push(n);} }); } return seen; }
 function renderOverlay(){ clearOverlay();
-  if(selected && revealed.has(selected)){ reachFrom(selected).forEach(function(id){ if(id===selected) return;
-    var cr=parseId(id); outline(cD(cr[0],cr[1]),"#c08a34",2,"rgba(192,138,52,0.22)"); }); }
-  if(selected){ var s=parseId(selected); outline(cD(s[0],s[1]),"#a23a22",3); } }
+  if(selected && revealed.has(selected)){
+    var reach=reachFrom(selected); lastReachSize=reach.size;
+    reach.forEach(function(id){ if(id===selected) return;
+      var cr=parseId(id); outline(cD(cr[0],cr[1]),"#c08a34",2,"rgba(192,138,52,0.22)"); });
+  } else { lastReachSize=null; }
+  if(selected){ var s=parseId(selected); outline(cD(s[0],s[1]),"#a23a22",3); }
+  updateDebug();
+}
 
 function showInfo(id){ selected=id; renderOverlay();
   var cr=parseId(id), isRev=revealed.has(id);
@@ -325,6 +330,7 @@ function initDebugOverlay(){
     var ctrStr = lastCenter ? lastCenter[0].toFixed(0)+","+lastCenter[1].toFixed(0) : "—";
     var dxStr = "—", dyStr = "—";
     if(lastTap && lastCenter){ dxStr=(lastCenter[0]-lastTap[0]).toFixed(0); dyStr=(lastCenter[1]-lastTap[1]).toFixed(0); }
+    var reachStr = lastReachSize===null ? "n/a" : String(lastReachSize);
     el.textContent=
       "vp: "+vp.clientWidth+"x"+vp.clientHeight+"\n"+
       "bm: "+bmR.width.toFixed(1)+"x"+bmR.height.toFixed(1)+"\n"+
@@ -332,6 +338,7 @@ function initDebugOverlay(){
       "s:  "+scale.toFixed(4)+"  tx:"+tx.toFixed(1)+"  ty:"+ty.toFixed(1)+"\n"+
       "tap: "+tapStr+"   ctr: "+ctrStr+"\n"+
       "dx:"+dxStr+"  dy:"+dyStr+"\n"+
+      "rev: "+revealed.size+"  sel: "+(selected||"—")+"  reach: "+reachStr+"\n"+
       "ua: "+uaShort;
   };
   var _origApply=apply; apply=function(){ _origApply(); updateDebug(); };
