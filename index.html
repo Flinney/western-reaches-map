@@ -216,7 +216,7 @@ async function initFirebase(){ if(!configured) return;
     flash("Couldn't reach the live server — showing the map read-only"); } }
 
 /* ---------------- calibrated hex grid ---------------- */
-var GRID={ a:142.88236869958047, b:485.688233162847, m:174.42528583526752, e:87.38122296995863, d:228.97169678985841,
+var GRID={ a:142.88236869958047, b:485.688233162847, m:174.42528583526752, e:87.38122296995863, d:208.97169678985841,
            W:190.50982493277397, H:174.42528583526752, fullW:9933, fullH:14043, colMin:1, colMax:64, rowMin:0, rowMax:80 };
 var DW=3200, DH=4524, K=DW/GRID.fullW, WD=GRID.W*K, HD=GRID.H*K;
 function centerFull(c,r){ return [GRID.a*c+GRID.b, GRID.m*r+GRID.e*(c&1)+GRID.d]; }
