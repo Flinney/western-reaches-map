@@ -406,6 +406,10 @@ function onGMChange(v){ isGM=!!v;
 /* ---------------- boot ---------------- */
 fit();
 initDebugOverlay();
+function debounce(fn,ms){ var t; return function(){ clearTimeout(t); t=setTimeout(fn,ms); }; }
+window.addEventListener("resize", debounce(fit,150));
+window.addEventListener("orientationchange", function(){ setTimeout(fit,100); });
+if(window.visualViewport) window.visualViewport.addEventListener("resize", debounce(fit,150));
 Backend.onRevealed(function(s){ revealed=s; renderFog(); if(selected && info.classList.contains("show")) showInfo(selected); });
 Backend.onGM(onGMChange);
 if(!Backend.configured){ flash("Demo mode — add Firebase settings in firebase-config.js to go live"); }
