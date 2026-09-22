@@ -107,6 +107,7 @@
   #seedrow{margin-top:14px; padding-top:12px; border-top:1px dashed #cdb98f; font-size:12px; color:var(--ink-soft)}
   #seedrow input[type=file]{font-size:11px; margin-top:6px}
   @media (max-width:560px){ #brand .s{display:none} #legend{display:none} #hint{display:none} }
+  #debug{position:fixed; top:0; left:0; z-index:100; font:11px ui-monospace,Menlo,Consolas,monospace; background:rgba(0,0,0,0.7); color:#8f8; padding:4px 6px; pointer-events:none; white-space:pre; margin:0;}
 </style>
 </head>
 <body>
@@ -131,6 +132,7 @@
       <img id="basemap" src="assets/map.webp" alt="Map of the Western Reaches" draggable="false">
       <svg id="ov" xmlns="http://www.w3.org/2000/svg"></svg>
     </div>
+    <pre id="debug" hidden></pre>
     <div id="gmpill"><span>GM MODE &middot; tap a hex to reveal</span><a id="signout">sign out</a></div>
     <div id="status"></div>
     <div id="info">
@@ -309,6 +311,27 @@ var statusEl=document.getElementById("status"), stTimer=null;
 function flash(msg){ statusEl.textContent=msg; statusEl.classList.add("show"); clearTimeout(stTimer);
   stTimer=setTimeout(function(){statusEl.classList.remove("show");},2800); }
 
+/* ---------------- debug overlay (?debug=1) ---------------- */
+var updateDebug=function(){};
+function initDebugOverlay(){
+  if(!location.search.includes("debug=1")) return;
+  var el=document.getElementById("debug"); el.hidden=false;
+  updateDebug=function(){
+    var ua=navigator.userAgent, uaShort=/iPhone|iPad|iPod/i.test(ua)?"iOS Safari":/Chrome/i.test(ua)?"Chrome":/Safari/i.test(ua)?"Safari":"other";
+    var bmR=basemap.getBoundingClientRect(), ovR=svg.getBoundingClientRect();
+    el.textContent=
+      "vp: "+vp.clientWidth+"x"+vp.clientHeight+"\n"+
+      "bm: "+bmR.width.toFixed(1)+"x"+bmR.height.toFixed(1)+"\n"+
+      "ov: "+ovR.width.toFixed(1)+"x"+ovR.height.toFixed(1)+"\n"+
+      "s:  "+scale.toFixed(4)+"  tx:"+tx.toFixed(1)+"  ty:"+ty.toFixed(1)+"\n"+
+      "ua: "+uaShort;
+  };
+  var _origApply=apply; apply=function(){ _origApply(); updateDebug(); };
+  updateDebug();
+  window.addEventListener("resize",updateDebug);
+  window.addEventListener("orientationchange",updateDebug);
+}
+
 /* ---------------- pan / zoom / tap ---------------- */
 var pointers=new Map(), panStart=null, moved=0, pinchStart=null;
 vp.addEventListener("pointerdown",function(e){ vp.setPointerCapture(e.pointerId); pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
@@ -381,6 +404,7 @@ function onGMChange(v){ isGM=!!v;
 
 /* ---------------- boot ---------------- */
 fit();
+initDebugOverlay();
 Backend.onRevealed(function(s){ revealed=s; renderFog(); if(selected && info.classList.contains("show")) showInfo(selected); });
 Backend.onGM(onGMChange);
 if(!Backend.configured){ flash("Demo mode — add Firebase settings in firebase-config.js to go live"); }
