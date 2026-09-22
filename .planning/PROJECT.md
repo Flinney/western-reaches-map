@@ -32,9 +32,9 @@ A single-page fog-of-war hex map for the Shadowdark "Western Reaches" tabletop c
 - [ ] Fast-travel highlight (gold tint on connected revealed neighbours) actually renders when a revealed hex is selected
 - [ ] "Reveal hex" / "Hide hex" button in the info panel actually toggles reveal state
 - [ ] GM revealing a hex on one device causes every other client to see the hex reveal within ~1 second
-- [ ] Pan, pinch-zoom, wheel-zoom, and zoom buttons work on desktop and touch devices
-- [ ] Search box locates hexes by ID (e.g. `3952`) and POIs by name; results tap-to-jump correctly
-- [ ] GM Mode toggle dims the fog so the GM can see unrevealed hexes
+- [x] Pan, pinch-zoom, wheel-zoom, and zoom buttons work on desktop and touch devices *(Validated in Phase 4: NAV-01, NAV-02)*
+- [x] Search box locates hexes by ID (e.g. `3952`) and POIs by name; results tap-to-jump correctly *(Validated in Phase 4: NAV-03, NAV-04)*
+- [x] GM Mode toggle dims the fog so the GM can see unrevealed hexes *(Validated in Phase 4: NAV-05)*
 - [ ] GitHub Pages auto-deploy on push to `main` — confidence that the deployed URL matches `main`
 - [ ] The app can be run and tweaked locally without needing to authenticate to Firebase (demo mode is enough for dev)
 
@@ -96,4 +96,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-09-20 after initialization*
+*Last updated: 2026-09-21 after Phase 4 (Navigation, Search & GM Mode) completed — MVP milestone at 20/20 requirements.*
