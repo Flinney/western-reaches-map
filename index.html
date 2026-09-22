@@ -254,6 +254,7 @@ var overlay=document.createElementNS(SVGNS,"g"); svg.appendChild(overlay);
 
 var revealed=new Set(), selected=null, isGM=false, gmMode=false, gmKey=null;
 var scale=0.3, tx=0, ty=0, minS=0.1, maxS=3.4;
+var lastTap=null, lastCenter=null;
 function apply(){ world.style.transform="translate("+tx+"px,"+ty+"px) scale("+scale+")"; }
 function fit(){ var w=vp.clientWidth, h=vp.clientHeight; if(!w||!h){ setTimeout(fit,60); return; }
   scale=Math.min(w/DW,h/DH)*0.98; minS=scale*0.85; tx=(w-DW*scale)/2; ty=(h-DH*scale)/2; apply(); }
@@ -320,11 +321,17 @@ function initDebugOverlay(){
   updateDebug=function(){
     var ua=navigator.userAgent, uaShort=/iPhone|iPad|iPod/i.test(ua)?"iOS Safari":/Chrome/i.test(ua)?"Chrome":/Safari/i.test(ua)?"Safari":"other";
     var bmR=basemap.getBoundingClientRect(), ovR=svg.getBoundingClientRect();
+    var tapStr = lastTap ? lastTap[0].toFixed(0)+","+lastTap[1].toFixed(0) : "—";
+    var ctrStr = lastCenter ? lastCenter[0].toFixed(0)+","+lastCenter[1].toFixed(0) : "—";
+    var dxStr = "—", dyStr = "—";
+    if(lastTap && lastCenter){ dxStr=(lastCenter[0]-lastTap[0]).toFixed(0); dyStr=(lastCenter[1]-lastTap[1]).toFixed(0); }
     el.textContent=
       "vp: "+vp.clientWidth+"x"+vp.clientHeight+"\n"+
       "bm: "+bmR.width.toFixed(1)+"x"+bmR.height.toFixed(1)+"\n"+
       "ov: "+ovR.width.toFixed(1)+"x"+ovR.height.toFixed(1)+"\n"+
       "s:  "+scale.toFixed(4)+"  tx:"+tx.toFixed(1)+"  ty:"+ty.toFixed(1)+"\n"+
+      "tap: "+tapStr+"   ctr: "+ctrStr+"\n"+
+      "dx:"+dxStr+"  dy:"+dyStr+"\n"+
       "ua: "+uaShort;
   };
   var _origApply=apply; apply=function(){ _origApply(); updateDebug(); };
@@ -353,7 +360,7 @@ function pinchInfo(){ var ps=[...pointers.values()], dx=ps[0].x-ps[1].x, dy=ps[0
 vp.addEventListener("wheel",function(e){ e.preventDefault(); var r=vp.getBoundingClientRect();
   zoomAt(e.clientX-r.left,e.clientY-r.top, e.deltaY<0?1.15:1/1.15); },{passive:false});
 function handleTap(sx,sy){ var w=screenToWorld(sx,sy); if(w[0]<0||w[1]<0||w[0]>DW||w[1]>DH) return;
-  var hx=pixelToHex(w[0],w[1]); if(hx) showInfo(hexId(hx[0],hx[1])); }
+  lastTap=w; var hx=pixelToHex(w[0],w[1]); if(hx){ lastCenter=cD(hx[0],hx[1]); showInfo(hexId(hx[0],hx[1])); updateDebug(); } }
 document.getElementById("zin").onclick=function(){ zoomAt(vp.clientWidth/2,vp.clientHeight/2,1.3); };
 document.getElementById("zout").onclick=function(){ zoomAt(vp.clientWidth/2,vp.clientHeight/2,1/1.3); };
 document.getElementById("fit").onclick=fit;
